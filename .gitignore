@@ -1,0 +1,38 @@
+# User-specific configurations
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries
+.idea/shelf
+
+# AWS User-specific
+.idea/aws.xml
+
+# Generated files
+.idea/codeStyles/codeStyleConfig.xml
+.idea/libraries
+
+# Datasource local storage
+.idea/dataSources/
+.idea/dataSources.local.xml
+
+# CMake
+cmake-build-*/
+
+# Mongo Explorer plugin
+.idea/mongoSettings.xml
+
+# File-based project format (Legacy)
+*.iws
+
+# IntelliJ "out" directory (Compiled .class files)
+out/
+
+# --- OPTIONAL ---
+# If you are using Maven or Gradle, you can usually ignore the .iml files
+# as the build tool will generate them.
+*.iml
+
+# If you want to ignore the entire .idea folder (Simpler, but you lose shared run configs)
+# Uncomment the line below and remove the specific .idea sections above:
+# .idea/

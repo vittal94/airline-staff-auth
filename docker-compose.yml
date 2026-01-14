@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: airline-postgres
+    environment:
+      POSTGRES_DB: airline_db
+      POSTGRES_USER: airline_user
+      POSTGRES_PASSWORD: airline_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - airline-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airline_user -d airline_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Mailpit - SMTP testing server
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: airline-mailpit
+    ports:
+      - "8025:8025"  # Web UI
+      - "1025:1025"  # SMTP server
+    networks:
+      - airline-network
+    environment:
+      MP_MAX_MESSAGES: 5000
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+  # Backend (optional - for when you want to run it in Docker)
+  backend:
+    build:
+      context: ./airline-backend
+      dockerfile: Dockerfile
+    container_name: airline-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: airline_db
+      DB_USER: airline_user
+      DB_PASSWORD: airline_pass
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+    networks:
+      - airline-network
+    volumes:
+      - ./airline-backend:/app
+    profiles:
+      - full-stack
+
+  # Frontend (optional - for when you want to run it in Docker)
+  frontend:
+    build:
+      context: ./airline-frontend
+      dockerfile: Dockerfile
+    container_name: airline-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8080
+    networks:
+      - airline-network
+    volumes:
+      - ./airline-frontend:/app
+      - /app/node_modules
+    profiles:
+      - full-stack
+
+networks:
+  airline-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
