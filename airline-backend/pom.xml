@@ -156,6 +156,38 @@
 
   <build>
     <plugins>
+        <plugin>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-maven-plugin</artifactId>
+            <version>${flyway.version}</version>
+
+            <!-- configuration: Connection details -->
+            <configuration>
+                <url>jdbc:postgresql://localhost:5433/airline_db</url>
+                <user>airline_user</user>
+                <password>securePassword123!</password>
+                <!-- Location of your SQL files -->
+                <locations>
+                    <location>filesystem:src/main/resources/db/migration</location>
+                </locations>
+            </configuration>
+
+            <!-- Dependencies required by the plugin to execute -->
+            <dependencies>
+                <!-- 1. The PostgreSQL Database Support for Flyway -->
+                <dependency>
+                    <groupId>org.flywaydb</groupId>
+                    <artifactId>flyway-database-postgresql</artifactId>
+                    <version>${flyway.version}</version>
+                </dependency>
+                <!-- 2. The PostgreSQL JDBC Driver -->
+                <dependency>
+                    <groupId>org.postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <version>${postgresql.version}</version> <!-- Use the version you use in project -->
+                </dependency>
+            </dependencies>
+        </plugin>
 <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>

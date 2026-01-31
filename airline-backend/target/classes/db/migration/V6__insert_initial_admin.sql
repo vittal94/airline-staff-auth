@@ -16,7 +16,7 @@ INSERT INTO users(
 ) VALUES (
           gen_random_uued(),
           COALESCE('${INITIAL_ADMIN_EMAIL}','admin@airline.com'),
-          '$argon2id$v=19$m=65536,t=3,p=4$7+6AJoMQYaWeBndc6YTcEw$ssZ3oYTNtPr4qspKA7TpRXmZ3uQjqygGFHL9QJwxpU4',
+          '$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHRzb21lc2FsdA$hash_placeholder',
           'System administrator',
           'ADMIN',
           'ACTIVE',
