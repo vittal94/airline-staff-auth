@@ -1,4 +1,4 @@
-package com.airline.airlinebackend.dto.responce;
+package com.airline.airlinebackend.dto.response;
 
 // Generic API response wrapper
 
