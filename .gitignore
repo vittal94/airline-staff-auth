@@ -36,4 +36,5 @@ out/
 # If you want to ignore the entire .idea folder (Simpler, but you lose shared run configs)
 # Uncomment the line below and remove the specific .idea sections above:
 # .idea/
+airline-backend/target/
 .env
