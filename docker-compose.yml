@@ -39,7 +39,7 @@ services:
   backend:
     build:
       context: ./airline-backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: airline-backend
     ports:
       - "8080:8080"
@@ -61,7 +61,13 @@ services:
     networks:
       - airline-network
     volumes:
-      - ./airline-backend:/app
+      # Mount the entire target directory containing the WAR
+      - ./airline-backend/target:/app/target
+      # Copy WAR to webapps (Tomcat will auto-extract it)
+      #- ./airline-backend:/app
+    command: >
+      sh -c "cp /app/target/*.war /usr/local/tomcat/webapps/ROOT.war && 
+                   catalina.sh run"
     profiles:
       - full-stack
 
