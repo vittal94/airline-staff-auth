@@ -38,3 +38,4 @@ out/
 # .idea/
 airline-backend/target/
 .env
+perplexity-mcp/
