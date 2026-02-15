@@ -39,3 +39,4 @@ out/
 airline-backend/target/
 .env
 perplexity-mcp/
+.clinerules
