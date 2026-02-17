@@ -2,7 +2,7 @@ CREATE TABLE remember_me_tokens (
     series VARCHAR(64) PRIMARY KEY,
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     token_hash VARCHAR(255) NOT NULL,
-    ip_adders VARCHAR(45),
+    ip_address VARCHAR(45),
     user_agent VARCHAR(500),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_used_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,

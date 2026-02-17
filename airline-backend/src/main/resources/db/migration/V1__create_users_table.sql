@@ -18,13 +18,13 @@ CREATE TABLE users (
 );
 
 --INDEXES
-CREATE INDEX idx_users_email ON user(email);
-CREATE INDEX idx_users_status ON user(status);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_status ON users(status);
 CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_users_created_at ON users(created_at);
 
 -- COMMENTS
-COMMENT ON TABLE user IS 'Airline staff user accounts';
+COMMENT ON TABLE users IS 'Airline staff user accounts';
 COMMENT ON COLUMN users.status IS 'Account status is: PENDING_EMAIL_CONFIRMATION,
                                                  PENDING_APPROVAL,ACTIVE,BLOCKED';
 
