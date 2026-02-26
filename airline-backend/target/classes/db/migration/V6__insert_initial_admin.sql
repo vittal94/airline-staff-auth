@@ -11,10 +11,10 @@ INSERT INTO users(
                   role,
                   status,
                   password_change_required,
-                  first_login_complete,
+                  first_login_completed,
                   created_at
 ) VALUES (
-          gen_random_uued(),
+          gen_random_uuid(),
           COALESCE('${INITIAL_ADMIN_EMAIL}','admin@airline.com'),
           '$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHRzb21lc2FsdA$hash_placeholder',
           'System administrator',

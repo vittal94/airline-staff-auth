@@ -1,8 +1,8 @@
 CREATE OR REPLACE FUNCTION cleanup_expired_sessions()
-RETURN INTEGER AS $$
+RETURNS INTEGER AS $$
 DECLARE
-       deleted_count AS INTEGER;
-       BEGIN
+       deleted_count INTEGER;
+BEGIN
        -- Delete expired session
        WITH deleted AS (
            DELETE FROM sessions
