@@ -1,4 +1,4 @@
-package integrationtests.DAO.UserDao;
+package integrationtests.DAO.userDao;
 
 import com.airline.airlinebackend.model.User;
 import com.airline.airlinebackend.model.emums.Role;

@@ -8,7 +8,7 @@
  * Each test runs against a real PostgreSQL container managed by AbstractDAOIT.
  * DB is truncated before every test via @BeforeEach in AbstractDAOIT.
  */
-package integrationtests.DAO.SessionDAO;
+package integrationtests.DAO.sessionDAO;
 
 import com.airline.airlinebackend.dao.SessionDAO;
 import com.airline.airlinebackend.model.Session;
@@ -21,11 +21,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.*;
 
-import static integrationtests.DAO.SessionDAO.SessionTestDataBuilder.aSession;
+import static integrationtests.DAO.sessionDAO.SessionTestDataBuilder.aSession;
 import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 

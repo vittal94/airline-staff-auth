@@ -1,4 +1,4 @@
-package integrationtests.DAO.UserDao;
+package integrationtests.DAO.userDao;
 
 import com.airline.airlinebackend.config.DatasourceConfig;
 import com.airline.airlinebackend.dao.UserDAO;
@@ -6,7 +6,6 @@ import com.airline.airlinebackend.model.User;
 import com.airline.airlinebackend.model.emums.Role;
 import com.airline.airlinebackend.model.emums.UserStatus;
 import integrationtests.DAO.AbstractDAOIT;
-import jakarta.activation.DataSource;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -21,7 +20,7 @@ import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.stream.IntStream;
 
-import static integrationtests.DAO.UserDao.UserTestDataBuilder.*;
+import static integrationtests.DAO.userDao.UserTestDataBuilder.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 

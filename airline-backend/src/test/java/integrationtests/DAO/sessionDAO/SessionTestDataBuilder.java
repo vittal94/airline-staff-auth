@@ -1,4 +1,4 @@
-package integrationtests.DAO.SessionDAO;
+package integrationtests.DAO.sessionDAO;
 
 import com.airline.airlinebackend.model.Session;
 
