@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/airline-backend/src/main/java/com/airline/airlinebackend/dao/EmailConfirmationTokenDAO.java" dialect="GenericSQL" />
     <file url="file://$PROJECT_DIR$/airline-backend/src/main/java/com/airline/airlinebackend/dao/SessionDAO.java" dialect="GenericSQL" />
     <file url="file://$PROJECT_DIR$/airline-backend/src/main/java/com/airline/airlinebackend/dao/UserDAO.java" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/airline-backend/src/main/resources/db/migration/V4__create_email_confirmation_tokens_table.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/airline-backend/src/test/java/integrationtests/DAO/emailConfiramtionTokenDAO/EmailConfirmationTokenDAOIT.java" dialect="GenericSQL" />
+    <file url="PROJECT" dialect="PostgreSQL" />
   </component>
 </project>
