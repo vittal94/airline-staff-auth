@@ -1,6 +1,6 @@
 package unittests.model;
 
-import com.airline.airlinebackend.model.emums.Role;
+import com.airline.airlinebackend.model.enums.Role;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

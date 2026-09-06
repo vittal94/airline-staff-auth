@@ -1,7 +1,7 @@
 package com.airline.airlinebackend.model;
 
-import com.airline.airlinebackend.model.emums.Role;
-import com.airline.airlinebackend.model.emums.UserStatus;
+import com.airline.airlinebackend.model.enums.Role;
+import com.airline.airlinebackend.model.enums.UserStatus;
 
 import java.time.Instant;
 import java.util.Objects;

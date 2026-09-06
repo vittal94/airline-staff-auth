@@ -2,8 +2,8 @@ package unittests.dto;
 
 import com.airline.airlinebackend.dto.response.UserResponse;
 import com.airline.airlinebackend.model.User;
-import com.airline.airlinebackend.model.emums.Role;
-import com.airline.airlinebackend.model.emums.UserStatus;
+import com.airline.airlinebackend.model.enums.Role;
+import com.airline.airlinebackend.model.enums.UserStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;

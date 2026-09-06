@@ -1,8 +1,8 @@
 package com.airline.airlinebackend.dao;
 
 import com.airline.airlinebackend.model.User;
-import com.airline.airlinebackend.model.emums.Role;
-import com.airline.airlinebackend.model.emums.UserStatus;
+import com.airline.airlinebackend.model.enums.Role;
+import com.airline.airlinebackend.model.enums.UserStatus;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

@@ -1,7 +1,7 @@
 package com.airline.airlinebackend.dto.response;
 
 import com.airline.airlinebackend.model.User;
-import com.airline.airlinebackend.model.emums.Role;
+import com.airline.airlinebackend.model.enums.Role;
 
 import java.util.Set;
 import java.util.UUID;

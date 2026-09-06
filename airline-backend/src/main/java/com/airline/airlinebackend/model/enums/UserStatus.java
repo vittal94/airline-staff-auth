@@ -1,4 +1,4 @@
-package com.airline.airlinebackend.model.emums;
+package com.airline.airlinebackend.model.enums;
 
 import java.util.Arrays;
 

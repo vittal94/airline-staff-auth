@@ -1,6 +1,6 @@
 package modelTest;
 
-import com.airline.airlinebackend.model.emums.Role;
+import com.airline.airlinebackend.model.enums.Role;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

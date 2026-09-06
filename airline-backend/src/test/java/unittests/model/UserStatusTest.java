@@ -1,7 +1,7 @@
 package unittests.model;
 
 
-import com.airline.airlinebackend.model.emums.UserStatus;
+import com.airline.airlinebackend.model.enums.UserStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
