@@ -40,3 +40,4 @@ airline-backend/target/
 .env
 perplexity-mcp/
 .clinerules/
+AGENTS.md
