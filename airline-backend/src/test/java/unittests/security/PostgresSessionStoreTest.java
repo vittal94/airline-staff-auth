@@ -31,7 +31,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -63,7 +62,7 @@ public class PostgresSessionStoreTest {
     @BeforeEach
     void setUp() {
         store = new PostgresSessionStore(sessionDao);
-        context = new JEEContext(request,response);
+        context = new JEEContext(request, response);
     }
 
     @AfterEach
@@ -73,8 +72,8 @@ public class PostgresSessionStoreTest {
 
     private Session buildSession(String id, boolean expired) {
         Instant expiresAt = expired
-                ? Instant.now().minus(5,ChronoUnit.MINUTES)
-                : Instant.now().plus(30,ChronoUnit.MINUTES);
+                ? Instant.now().minus(5, ChronoUnit.MINUTES)
+                : Instant.now().plus(30, ChronoUnit.MINUTES);
         return new Session(id, null, "JUNIT-Agent", "127.0.0.1", new HashMap<>(), expiresAt);
     }
 
@@ -362,7 +361,7 @@ public class PostgresSessionStoreTest {
     class RenewSessionTests {
 
         @Test
-        @DisplayName("should delete old session, create a new one, and preserve data and user id")
+        @DisplayName("should rotate session id and preserve data and user id")
         void renewSession_existingSession_rotatesIdAndPreservesData() {
             // Arrange
             String oldSessionId = "old-session-id";
@@ -375,13 +374,9 @@ public class PostgresSessionStoreTest {
             oldSession.getSessionData().put("foo", "bar");
             given(sessionDao.findById(oldSessionId)).willReturn(Optional.of(oldSession));
 
-            // Stub findById for the newly generated session id: return whatever was passed to save()
             ArgumentCaptor<Session> savedSessionCaptor = ArgumentCaptor.forClass(Session.class);
-            lenient().doAnswer(invocation -> {
-                Session saved = invocation.getArgument(0);
-                given(sessionDao.findById(saved.getId())).willReturn(Optional.of(saved));
-                return saved;
-            }).when(sessionDao).save(savedSessionCaptor.capture());
+            lenient().doAnswer(invocation -> invocation.getArgument(0))
+                    .when(sessionDao).save(savedSessionCaptor.capture());
 
             // Act
             boolean result = store.renewSession(context);
@@ -390,13 +385,12 @@ public class PostgresSessionStoreTest {
             assertThat(result).isTrue();
             then(sessionDao).should().delete(oldSessionId);
             then(sessionDao).should().save(any(Session.class));
+            then(sessionDao).should(never()).update(any(Session.class));
 
-            ArgumentCaptor<Session> updatedSessionCaptor = ArgumentCaptor.forClass(Session.class);
-            then(sessionDao).should().update(updatedSessionCaptor.capture());
-            Session updatedSession = updatedSessionCaptor.getValue();
-            assertThat(updatedSession.getId()).isNotEqualTo(oldSessionId);
-            assertThat(updatedSession.getUserId()).isEqualTo(userId);
-            assertThat(updatedSession.getSessionData()).containsEntry("foo", "bar");
+            Session savedSession = savedSessionCaptor.getValue();
+            assertThat(savedSession.getId()).isNotEqualTo(oldSessionId);
+            assertThat(savedSession.getUserId()).isEqualTo(userId);
+            assertThat(savedSession.getSessionData()).containsEntry("foo", "bar");
         }
 
         @Test
@@ -405,11 +399,8 @@ public class PostgresSessionStoreTest {
             // Arrange
             given(request.getCookies()).willReturn(null);
 
-            lenient().doAnswer(invocation -> {
-                Session saved = invocation.getArgument(0);
-                given(sessionDao.findById(saved.getId())).willReturn(Optional.of(saved));
-                return saved;
-            }).when(sessionDao).save(any(Session.class));
+            lenient().doAnswer(invocation -> invocation.getArgument(0))
+                    .when(sessionDao).save(any(Session.class));
 
             // Act
             boolean result = store.renewSession(context);
@@ -418,33 +409,73 @@ public class PostgresSessionStoreTest {
             assertThat(result).isTrue();
             then(sessionDao).should(never()).delete(anyString());
             then(sessionDao).should().save(any(Session.class));
+            then(sessionDao).should(never()).update(any(Session.class));
         }
     }
 
     // -------------------------------------------------------------------------
-    // setUserId() / getUserId()
+    // renewSessionForUser() / getUserId()
     // -------------------------------------------------------------------------
     @Nested
-    @DisplayName("setUserId() / getUserId()")
+    @DisplayName("renewSessionForUser() / getUserId()")
     class UserIdTests {
 
         @Test
-        @DisplayName("setUserId should associate the user id with the current session and persist it")
-        void setUserId_withExistingSession_persistsUserId() {
+        @DisplayName("should rotate session id and bind the user id even without an existing session")
+        void renewSessionForUser_noExistingSession_bindsUserId() {
             // Arrange
-            String sessionId = "session-for-user";
+            given(request.getCookies()).willReturn(null);
             UUID userId = UUID.randomUUID();
-            jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie(COOKIE_NAME, sessionId);
-            given(request.getCookies()).willReturn(new jakarta.servlet.http.Cookie[]{cookie});
-            given(sessionDao.findById(sessionId)).willReturn(Optional.of(buildSession(sessionId, false)));
+
+            ArgumentCaptor<Session> savedSessionCaptor = ArgumentCaptor.forClass(Session.class);
+            lenient().doAnswer(invocation -> invocation.getArgument(0))
+                    .when(sessionDao).save(savedSessionCaptor.capture());
 
             // Act
-            store.setUserId(context, userId);
+            boolean result = store.renewSessionForUser(context, userId);
 
             // Assert
-            ArgumentCaptor<Session> sessionCaptor = ArgumentCaptor.forClass(Session.class);
-            then(sessionDao).should().update(sessionCaptor.capture());
-            assertThat(sessionCaptor.getValue().getUserId()).isEqualTo(userId);
+            assertThat(result).isTrue();
+            then(sessionDao).should(never()).delete(anyString());
+            then(sessionDao).should().save(any(Session.class));
+            then(sessionDao).should(never()).update(any(Session.class));
+
+            Session savedSession = savedSessionCaptor.getValue();
+            assertThat(savedSession.getUserId()).isEqualTo(userId);
+        }
+
+        @Test
+        @DisplayName("should rotate session id and replace the user id of an existing session")
+        void renewSessionForUser_existingSession_replacesUserId() {
+            // Arrange
+            String oldSessionId = "old-session-id";
+            UUID oldUserId = UUID.randomUUID();
+            UUID newUserId = UUID.randomUUID();
+            jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie(COOKIE_NAME, oldSessionId);
+            given(request.getCookies()).willReturn(new jakarta.servlet.http.Cookie[]{cookie});
+
+            Session oldSession = buildSession(oldSessionId, false);
+            oldSession.setUserId(oldUserId);
+            oldSession.getSessionData().put("foo", "bar");
+            given(sessionDao.findById(oldSessionId)).willReturn(Optional.of(oldSession));
+
+            ArgumentCaptor<Session> savedSessionCaptor = ArgumentCaptor.forClass(Session.class);
+            lenient().doAnswer(invocation -> invocation.getArgument(0))
+                    .when(sessionDao).save(savedSessionCaptor.capture());
+
+            // Act
+            boolean result = store.renewSessionForUser(context, newUserId);
+
+            // Assert
+            assertThat(result).isTrue();
+            then(sessionDao).should().delete(oldSessionId);
+            then(sessionDao).should().save(any(Session.class));
+            then(sessionDao).should(never()).update(any(Session.class));
+
+            Session savedSession = savedSessionCaptor.getValue();
+            assertThat(savedSession.getId()).isNotEqualTo(oldSessionId);
+            assertThat(savedSession.getUserId()).isEqualTo(newUserId);
+            assertThat(savedSession.getSessionData()).containsEntry("foo", "bar");
         }
 
         @Test

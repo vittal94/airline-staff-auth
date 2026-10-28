@@ -66,22 +66,27 @@ public class PostgresSessionStore implements SessionStore {
         }
 
         if (createSession) {
-            return Optional.of(createNewSession(request, response));
+            return Optional.of(createNewSession(request, response,null, new HashMap<>()));
         }
 
         return Optional.empty();
     }
 
-    private String createNewSession(HttpServletRequest request, HttpServletResponse response) {
+    private String createNewSession(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            UUID userId,
+            Map<String, Object> initialData
+    ) {
         String sessionId = SecureTokenGenerator.generateSessionId();
         Instant expiresAt = Instant.now().plus(config.getSessionTimeoutMinutes(), ChronoUnit.MINUTES);
 
         Session session = new Session(
                 sessionId,
-                null, // User ID set on authentication
+                userId,
                 ServletUtil.getClientIP(request),
                 ServletUtil.getUserAgent(request),
-                new HashMap<>(),
+                initialData,
                 expiresAt
         );
 
@@ -160,29 +165,37 @@ public class PostgresSessionStore implements SessionStore {
         return Optional.empty();
     }
 
+    /** pac4j contract: rotate the session ID, keep whatever user the current session has. */
     @Override
     public boolean renewSession(WebContext context) {
+        return renew(context, null, true);
+    }
+
+    /** Rotate the session ID and bind the authenticated user in the same INSERT. */
+    public boolean renewSessionForUser(WebContext context, UUID userId) {
+        Objects.requireNonNull(userId, "userId");
+        return renew(context, userId, false);
+    }
+
+    private boolean renew(WebContext context, UUID newUserId, boolean keepCurrentUser) {
         JEEContext ctx = (JEEContext) context;
         HttpServletRequest request = ctx.getNativeRequest();
         HttpServletResponse response = ctx.getNativeResponse();
 
         Session oldSession = getCurrentSession(context);
-        Map<String, Object> oldData = oldSession != null ?
-                new HashMap<>(oldSession.getSessionData()) : new HashMap<>();
-        UUID userId = oldSession != null ? oldSession.getUserId() : null;
+        Map<String, Object> oldData = oldSession != null
+                ? new HashMap<>(oldSession.getSessionData()) : new HashMap<>();
+        UUID userId = keepCurrentUser
+                ? (oldSession != null ? oldSession.getUserId() : null)
+                : newUserId;
 
         // Destroy old session
         if (oldSession != null) {
             sessionDao.delete(oldSession.getId());
         }
 
-        // Create new session with rotated ID
-        String newSessionId = createNewSession(request, response);
-        Session newSession = sessionDao.findById(newSessionId).orElseThrow();
-        newSession.setSessionData(oldData);
-        newSession.setUserId(userId);
-        sessionDao.update(newSession);
-        currentSession.set(newSession);
+        // Create new session with rotated ID, already bound to the user
+        String newSessionId = createNewSession(request, response, userId, oldData);
 
         logger.debug("Session renewed: {} -> {}",
                 oldSession != null ? oldSession.getId() : "null", newSessionId);
@@ -205,17 +218,6 @@ public class PostgresSessionStore implements SessionStore {
             session = currentSession.get();
         }
         return session;
-    }
-
-    /**
-     * Associates a user with the current session.
-     */
-    public void setUserId(WebContext context, UUID userId) {
-        Session session = getOrCreateSession(context);
-        if (session != null) {
-            session.setUserId(userId);
-            sessionDao.update(session);
-        }
     }
 
     /**
