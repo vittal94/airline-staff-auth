@@ -3,9 +3,14 @@ package com.airline.airlinebackend.service;
 import com.airline.airlinebackend.dao.SessionDAO;
 import com.airline.airlinebackend.dao.UserDAO;
 import com.airline.airlinebackend.dto.request.LoginRequest;
+import com.airline.airlinebackend.exception.AccountBlockedException;
+import com.airline.airlinebackend.exception.AccountNotApprovedException;
 import com.airline.airlinebackend.exception.AuthenticationException;
+import com.airline.airlinebackend.exception.BaseException;
+import com.airline.airlinebackend.exception.EmailNotConfirmedException;
 import com.airline.airlinebackend.model.LoginAttempt;
 import com.airline.airlinebackend.model.User;
+import com.airline.airlinebackend.model.enums.UserStatus;
 import com.airline.airlinebackend.security.PasswordEncoder;
 import com.airline.airlinebackend.security.PostgresSessionStore;
 import com.airline.airlinebackend.security.RememberMeService;
@@ -20,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Authentication service handling login, logout, and session management
@@ -113,10 +119,124 @@ public class AuthService {
             return user;
         } catch (AuthenticationException e) {
             throw e;
+        } catch (BaseException e) {
+            // Domain exceptions (e.g. AccountBlockedException, EmailNotConfirmedException)
+            // carry their own HTTP status — do not wrap them into a generic login failure
+            throw e;
         } catch (Exception e) {
             logger.error("Login error for email: {}", email, e);
-            throw new AuthenticationException("Login failed");
+            throw new AuthenticationException("Login failed",e);
         }
     }
-    private void validateAccountStatus(User user) {}
+
+    /**
+     * Attempts to auto login using remember-me token
+     */
+    public Optional<User> tryToRememberMeLogin(
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse,
+            PostgresSessionStore sessionStore
+    ) {
+        Optional<User> optUser = rememberMeService.validateAndRotate(httpRequest, httpResponse);
+
+        if(optUser.isPresent()) {
+            User user = optUser.get();
+
+            //Verify account is still active
+            if(user.getStatus() != UserStatus.ACTIVE) {
+                logger.debug("Remember-me login rejected: account not active");
+                rememberMeService.clearRememberMe(httpRequest, httpResponse);
+                return Optional.empty();
+            }
+
+            //Create session
+            WebContext context = new JEEContext(httpRequest, httpResponse);
+            sessionStore.renewSessionForUser(context, user.getId());
+
+            userService.updateLastLogin(user.getId());
+
+            logger.info("User logged in via remember-me: {}", user.getEmail());
+        }
+        return optUser;
+    }
+
+    /**
+     *Logout user and invalidate session
+     */
+    public void logout(
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse,
+            PostgresSessionStore sessionStore
+    ) {
+        WebContext context = new JEEContext(httpRequest, httpResponse);
+
+        //Get userId before destroying session
+        Optional<UUID> useId = sessionStore.getUserId(context);
+
+        //Clear remember-me token
+        rememberMeService.clearRememberMe(httpRequest, httpResponse);
+
+        //Destroy session
+        sessionStore.destroySession(context);
+
+        useId.ifPresent(id -> logger.info("User logged out: {}", id));
+    }
+
+    /**
+     * Change password and invalidate all sessions/tokens
+     */
+    public void changePassword(
+            UUID userId,
+            String currentPassword,
+            String newPassword,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse,
+            PostgresSessionStore sessionStore
+            ) {
+        //Change password through userService
+        userService.changePassword(userId, currentPassword, newPassword);
+
+        //Invalidate all user's remember-me tokens
+        rememberMeService.clearAllUserTokens(userId);
+
+        //Invalidate all session except current
+        WebContext context = new JEEContext(httpRequest, httpResponse);
+        Optional<String> currentSessionId = sessionStore.getSessionId(context,false);
+
+        sessionDao.deleteByUserId(userId);
+
+        //Rotate session id
+        sessionStore.renewSessionForUser(context, userId);
+
+        //Create new remember-me token
+        rememberMeService.createRememberMeToken(httpRequest,httpResponse,userId);
+
+        logger.info("Password changed and sessions invalidates for the user: {}", userId);
+    }
+
+    /**
+     * Get current authenticated user from session
+     */
+    public Optional<User> getCurrentUser(
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse,
+            PostgresSessionStore sessionStore
+    ) {
+        WebContext context = new JEEContext(httpRequest, httpResponse);
+        Optional<UUID> useId = sessionStore.getUserId(context);
+
+        if(useId.isEmpty()) {
+            return Optional.empty();
+        }
+        return userDao.findById(useId.get());
+    }
+
+    private void validateAccountStatus(User user) {
+        switch(user.getStatus()) {
+            case PENDING_EMAIL_CONFIRMATION -> throw new EmailNotConfirmedException();
+            case PENDING_APPROVAL -> throw new AccountNotApprovedException();
+            case BLOCKED -> throw new AccountBlockedException();
+            case ACTIVE -> {}
+        }
+    }
 }

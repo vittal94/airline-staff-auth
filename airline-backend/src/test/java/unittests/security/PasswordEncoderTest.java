@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Base64;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -120,7 +121,13 @@ class PasswordEncoderTest {
         void verify_tamperedHash_returnsFalse() {
             // Arrange
             String encodedHash = PasswordEncoder.encode(VALID_PASSWORD);
-            String tamperedHash = encodedHash.substring(0, encodedHash.length() - 1) + "X";
+            String[] parts = encodedHash.split("\\$");
+            // Flip a bit in the first byte of the hash section — deterministic, unlike changing
+            // the final Base64 character (whose low bits may collide with the original)
+            byte[] hashBytes = Base64.getDecoder().decode(parts[5]);
+            hashBytes[0] ^= 0x01;
+            String tamperedHash = encodedHash.substring(0, encodedHash.length() - parts[5].length())
+                    + Base64.getEncoder().withoutPadding().encodeToString(hashBytes);
 
             // Act
             boolean result = PasswordEncoder.verify(VALID_PASSWORD, tamperedHash);
