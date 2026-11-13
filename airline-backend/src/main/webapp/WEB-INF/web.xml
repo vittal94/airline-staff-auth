@@ -3,4 +3,28 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
          version="6.0">
+
+    <!-- Filter chain order is only deterministic for filters declared here;
+         annotation-only filters run after these in unspecified order.
+         CorsFilter must run before RateLimitFilter so 429 responses carry
+         CORS headers and preflight OPTIONS bypass the limiter.
+         (A web.xml declaration overrides the @WebFilter annotation, so
+         CorsFilter/RateLimitFilter are not registered twice.) -->
+    <filter>
+        <filter-name>CorsFilter</filter-name>
+        <filter-class>com.airline.airlinebackend.filter.CorsFilter</filter-class>
+    </filter>
+    <filter>
+        <filter-name>RateLimitFilter</filter-name>
+        <filter-class>com.airline.airlinebackend.filter.RateLimitFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>CorsFilter</filter-name>
+        <url-pattern>/api/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>RateLimitFilter</filter-name>
+        <url-pattern>/api/*</url-pattern>
+    </filter-mapping>
 </web-app>
