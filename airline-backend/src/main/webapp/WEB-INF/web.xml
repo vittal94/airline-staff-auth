@@ -4,12 +4,18 @@
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
          version="6.0">
 
-    <!-- Filter chain order is only deterministic for filters declared here;
-         annotation-only filters run after these in unspecified order.
-         CorsFilter must run before RateLimitFilter so 429 responses carry
-         CORS headers and preflight OPTIONS bypass the limiter.
-         (A web.xml declaration overrides the @WebFilter annotation, so
-         CorsFilter/RateLimitFilter are not registered twice.) -->
+    <!-- Filter chain order is the declaration order below. Deterministic order
+         matters:
+         1. CorsFilter    - first, so all responses (incl. errors) carry CORS
+                             headers and preflight OPTIONS short-circuit early.
+         2. RateLimitFilter - reject floods before any expensive work.
+         3. SecurityFilter - authn/authz before anything else touches the request.
+         4. CsrfFilter    - CSRF validation for state-changing requests.
+         5. XssFilter     - last, closest to the servlets: its wrapper sanitizes
+                             getHeader(), so SecurityFilter/CsrfFilter must read
+                             the raw headers/cookies before it runs.
+         (A web.xml declaration overrides the @WebFilter annotation, so filters
+         declared here are not registered twice.) -->
     <filter>
         <filter-name>CorsFilter</filter-name>
         <filter-class>com.airline.airlinebackend.filter.CorsFilter</filter-class>
@@ -18,6 +24,18 @@
         <filter-name>RateLimitFilter</filter-name>
         <filter-class>com.airline.airlinebackend.filter.RateLimitFilter</filter-class>
     </filter>
+    <filter>
+        <filter-name>SecurityFilter</filter-name>
+        <filter-class>com.airline.airlinebackend.filter.SecurityFilter</filter-class>
+    </filter>
+    <filter>
+        <filter-name>CsrfFilter</filter-name>
+        <filter-class>com.airline.airlinebackend.filter.CsrfFilter</filter-class>
+    </filter>
+    <filter>
+        <filter-name>XssFilter</filter-name>
+        <filter-class>com.airline.airlinebackend.filter.XssFilter</filter-class>
+    </filter>
 
     <filter-mapping>
         <filter-name>CorsFilter</filter-name>
@@ -25,6 +43,18 @@
     </filter-mapping>
     <filter-mapping>
         <filter-name>RateLimitFilter</filter-name>
+        <url-pattern>/api/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>SecurityFilter</filter-name>
+        <url-pattern>/api/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>CsrfFilter</filter-name>
+        <url-pattern>/api/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>XssFilter</filter-name>
         <url-pattern>/api/*</url-pattern>
     </filter-mapping>
 </web-app>
